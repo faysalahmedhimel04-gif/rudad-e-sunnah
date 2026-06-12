@@ -1,14 +1,14 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import Google from "next-auth/providers/google";
 import { MongoDBAdapter } from "@auth/mongodb-adapter";
 import clientPromise from "@/lib/mongodb-client";
 import User from "@/models/User"; // Our custom User model
 import { connectDB } from "@/lib/mongodb"; // Existing mongoose connection
 
-export const authOptions = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: MongoDBAdapter(clientPromise),
   providers: [
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
@@ -20,30 +20,32 @@ export const authOptions = {
         if (account?.provider === "google") {
           await connectDB(); // Ensure Mongoose is connected
 
-          const existingUser = await User.findOne({ email: user.email });
+          const email = user.email;
+          if (!email) return false; // Email is required
+
+          const existingUser = await User.findOne({ email });
 
           if (!existingUser) {
             // Auto-create user profile in MongoDB on first login
             await User.create({
-              name: user.name,
-              email: user.email,
-              image: user.image,
-              googleId: profile?.sub, // Google's unique ID
+              name: user.name || "Unknown User",
+              email,
+              image: user.image ?? undefined,
+              googleId: (profile as any)?.sub || account.providerAccountId,
               role: "user",
               cart: [],
               orders: [],
             });
-            console.log(`New user created via Google: ${user.email}`);
+            console.log(`New user created via Google: ${email}`);
           } else if (!existingUser.googleId) {
             // Link Google ID if user existed (e.g. from admin seed)
-            existingUser.googleId = profile?.sub;
+            existingUser.googleId = (profile as any)?.sub || account.providerAccountId;
             await existingUser.save();
           }
         }
         return true; // Allow sign in
       } catch (error) {
         console.error("Error in signIn callback:", error);
-        // Returning false will show the Callback error page
         return false;
       }
     },
@@ -62,14 +64,12 @@ export const authOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   session: {
-    strategy: "jwt", // Use JWT for sessions (works well with adapter)
+    strategy: "jwt",
   },
   pages: {
-    signIn: "/login", // Custom login page
+    signIn: "/login",
   },
-  debug: true, // Temporarily enable for better error logs in the terminal
-};
+  debug: true,
+});
 
-const handler = NextAuth(authOptions);
-
-export { handler as GET, handler as POST };
+export const { GET, POST } = handlers;

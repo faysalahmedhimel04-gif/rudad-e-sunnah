@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { auth } from "@/app/api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import User from "@/models/User";
 
 export default async function OrdersPage() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
   if (!session?.user) {
     redirect("/api/auth/signin");
@@ -20,9 +19,9 @@ export default async function OrdersPage() {
         <div className="bg-white rounded-2xl border border-[#D9CBB8] p-8">
           <p className="text-[#5C5248] mb-6">Track your past orders and delivery status.</p>
           
-          {dbUser?.orders?.length > 0 ? (
+          {(dbUser?.orders?.length ?? 0) > 0 ? (
             <ul className="space-y-4">
-              {dbUser.orders.map((order: any, i: number) => (
+              {(dbUser?.orders || []).map((order: any, i: number) => (
                 <li key={i} className="p-4 border border-[#EDE4D7] rounded-lg">
                   Order #{i + 1} — Status: <span className="text-[#9C2A2A] font-medium">Pending</span>
                 </li>
