@@ -6,28 +6,61 @@ import { Product } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { toast } from 'sonner';
 import { ShoppingBag } from 'lucide-react';
+import { useSession, signIn } from 'next-auth/react';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  const { data: session } = useSession();
   const addToCart = useCartStore((state) => state.addToCart);
   const openCart = useCartStore((state) => state.openCart);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
-    addToCart(product);
-    
-    // Beautiful toast notification
-    toast.success(`Added ${product.name}`, {
-      description: `$${product.price} • Tap to view cart`,
-      action: {
-        label: "View Cart",
-        onClick: () => openCart(),
-      },
-      duration: 2400,
-    });
+
+    if (!session) {
+      toast("Please sign in to add items to your cart", {
+        description: "Your cart will be saved to your account",
+        action: {
+          label: "Sign in",
+          onClick: () => signIn("google"),
+        },
+      });
+      return;
+    }
+
+    // If logged in, save to database
+    try {
+      const res = await fetch("/api/user/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, quantity: 1 }),
+      });
+
+      if (res.ok) {
+        toast.success(`Added ${product.name}`, {
+          description: `$${product.price} • View in My Cart`,
+          action: {
+            label: "My Cart",
+            onClick: () => window.location.href = "/cart",
+          },
+        });
+      } else {
+        throw new Error("Failed to save to cart");
+      }
+    } catch (error) {
+      // Fallback to local Zustand cart
+      addToCart(product);
+      toast.success(`Added ${product.name}`, {
+        description: `$${product.price} • Tap to view cart`,
+        action: {
+          label: "View Cart",
+          onClick: () => openCart(),
+        },
+      });
+    }
   };
 
   // Support both external images (Unsplash etc.) and locally uploaded admin images (/uploads/...)

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ShoppingCart, Search, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
+import UserMenu from './UserMenu';
 
 interface NavbarProps {
   searchTerm?: string;
@@ -91,6 +92,9 @@ export default function Navbar({ searchTerm = '', onSearchChange }: NavbarProps)
               <span className="cart-badge">{cartCount}</span>
             )}
           </button>
+
+          {/* Google Auth - User Avatar / Login Button */}
+          <UserMenu />
 
           {/* Mobile Hamburger */}
           <button

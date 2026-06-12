@@ -13,8 +13,26 @@ import type { NextRequest } from "next/server";
  * non-blocking. The file still functions for route protection.
  */
 export async function middleware(request: NextRequest) {
-  // === TEMPORARY: Allow all /admin routes without checks ===
-  // To re-enable protection later, restore the original JWT cookie + verify logic.
+  const { pathname } = request.nextUrl;
+
+  // TEMPORARY bypass for admin (as per dev request)
+  if (pathname.startsWith("/admin")) {
+    return NextResponse.next();
+  }
+
+  // Protect user routes - require login
+  const protectedRoutes = ["/cart", "/profile", "/orders"];
+  const isProtected = protectedRoutes.some((route) => pathname.startsWith(route));
+
+  if (isProtected) {
+    const token = request.cookies.get("next-auth.session-token") || 
+                  request.cookies.get("__Secure-next-auth.session-token");
+
+    if (!token) {
+      return NextResponse.redirect(new URL("/api/auth/signin", request.url));
+    }
+  }
+
   return NextResponse.next();
 }
 
