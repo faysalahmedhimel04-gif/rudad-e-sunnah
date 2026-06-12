@@ -108,11 +108,25 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          <div className="mt-7 pt-5 border-t border-[#3A3332] text-center">
+          {/* TEMPORARY DEV BYPASS BUTTON */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => router.push('/admin')}
+              className="admin-btn admin-btn-outline w-full py-[13px] text-base border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37] hover:text-[#121010]"
+            >
+              Enter Admin Panel (Temporary Dev Bypass)
+            </button>
+            <p className="text-center text-[10px] text-[#A89E8F] mt-1.5">
+              For development testing only — skips login
+            </p>
+          </div>
+
+          <div className="mt-6 pt-5 border-t border-[#3A3332] text-center">
             <p className="text-[11px] text-[#A89E8F] leading-relaxed">
-              Demo credentials: <span className="font-mono text-[#D4AF37]">admin / rudad2025</span>
+              Demo credentials (when real auth is enabled): <span className="font-mono text-[#D4AF37]">admin / rudad2025</span>
               <br />
-              <span className="text-[#6C6358]">Set ADMIN_PASSWORD and ADMIN_USER in Vercel environment variables for production.</span>
+              <span className="text-[#6C6358]">Set ADMIN_PASSWORD and ADMIN_USER in Vercel for production.</span>
             </p>
           </div>
         </div>

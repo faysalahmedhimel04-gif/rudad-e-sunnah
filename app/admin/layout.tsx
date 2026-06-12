@@ -1,36 +1,36 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useAdminStore } from "@/lib/admin-store";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminNavbar from "@/components/admin/AdminNavbar";
 
-// This is the protected admin shell.
-// All /admin routes inherit this layout automatically.
+/**
+ * TEMPORARY SIMPLIFIED ADMIN LAYOUT (for development / testing)
+ * 
+ * Strict JWT verification removed so /admin is immediately accessible.
+ * A visible banner indicates this is temporary.
+ * 
+ * When ready to restore proper auth:
+ *   - Re-enable the checks in this file
+ *   - Restore logic in middleware.ts
+ *   - Ensure login page updates the Zustand store on success
+ */
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, loadProducts } = useAdminStore();
+  const { loadProducts } = useAdminStore();
   const pathname = usePathname();
-  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Load live data from MongoDB when entering the admin area
+  // Load live data from MongoDB when entering the admin area (keep this)
   useEffect(() => {
     if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
       loadProducts?.();
     }
   }, [pathname, loadProducts]);
 
-  // Client-side auth sync (middleware is the real gatekeeper)
-  React.useEffect(() => {
-    // We keep the Zustand flag mostly for UI (the real protection is the httpOnly cookie + middleware)
-    if (!isAuthenticated && pathname !== "/admin/login") {
-      // Don't hard redirect here anymore — middleware handles it
-    }
-  }, [isAuthenticated, pathname, router]);
-
   // Close mobile sidebar on route change
-  React.useEffect(() => {
+  useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
 
@@ -39,15 +39,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <div className="admin-layout min-h-screen">{children}</div>;
   }
 
-  // If not authed yet, don't flash the panel
-  if (!isAuthenticated) {
-    return (
-      <div className="admin-layout min-h-screen flex items-center justify-center">
-        <div className="text-[#A89E8F] text-sm tracking-widest">VERIFYING ACCESS...</div>
-      </div>
-    );
-  }
-
+  // TEMP: Always render the admin shell — no more "VERIFYING ACCESS..." block
   return (
     <div className="admin-layout flex min-h-screen overflow-hidden">
       {/* Sidebar — hidden on mobile until toggled */}
@@ -62,6 +54,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)}
           isSidebarOpen={isSidebarOpen}
         />
+
+        {/* TEMPORARY DEV BANNER - remove when auth is re-enabled */}
+        <div className="bg-amber-500 text-black px-4 py-2 text-center text-sm font-medium">
+          ⚠️ TEMPORARY DEV MODE — Admin authentication bypassed for testing. 
+          Proper login will be restored soon. Direct access enabled.
+        </div>
 
         {/* Page content */}
         <main className="flex-1 p-5 lg:p-8 overflow-auto">

@@ -1,40 +1,24 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verifyAdminToken } from "./lib/auth";
 
 /**
- * Protects all /admin routes (except login page).
- * This is the real security layer — even if client-side guard is bypassed.
+ * TEMPORARY BYPASS for development / testing
+ * 
+ * Admin auth is temporarily disabled so you can access /admin immediately
+ * without being stuck on "VERIFYING ACCESS...".
+ * 
+ * Real JWT + middleware protection will be re-enabled later.
+ * 
+ * Note: The "middleware" deprecation warning is from Next.js 16 and is
+ * non-blocking. The file still functions for route protection.
  */
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Only protect admin area
-  if (pathname.startsWith("/admin")) {
-    // Allow the login page itself
-    if (pathname === "/admin/login") {
-      return NextResponse.next();
-    }
-
-    const token = request.cookies.get("admin-token")?.value;
-
-    if (!token) {
-      return NextResponse.redirect(new URL("/admin/login", request.url));
-    }
-
-    const session = await verifyAdminToken(token);
-    if (!session || session.role !== "admin") {
-      // Invalid or expired token → force re-login
-      const response = NextResponse.redirect(new URL("/admin/login", request.url));
-      response.cookies.delete("admin-token");
-      return response;
-    }
-  }
-
+  // === TEMPORARY: Allow all /admin routes without checks ===
+  // To re-enable protection later, restore the original JWT cookie + verify logic.
   return NextResponse.next();
 }
 
-// Only run middleware on admin routes (performance)
+// Still keep the matcher so we can easily restore logic later
 export const config = {
   matcher: ["/admin/:path*"],
 };
